@@ -1,20 +1,19 @@
-from setuptools import setup, Extension
+from pathlib import Path
+from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
-import os
 
-here = os.path.abspath(os.path.dirname(__file__))
-src_dir = os.path.join(here, "src")
-
-sources = [
-    os.path.join(src_dir, "metal_flash_attention.mm"),
-    os.path.join(src_dir, "metal_binding.cpp"),
-]
+ROOT = Path(__file__).parent
 
 ext_modules = [
     CppExtension(
         name="metal_flash_attn",
-        sources=sources,
-        include_dirs=[src_dir],
+        sources=[
+            "src/metal_flash_attention.mm",
+            "src/metal_binding.cpp",
+        ],
+        include_dirs=[
+            "src",
+        ],
         language="c++",
         extra_compile_args=[
             "-std=c++17",
@@ -29,11 +28,16 @@ ext_modules = [
     )
 ]
 
+long_description = ""
+readme = ROOT / "README.md"
+if readme.exists():
+    long_description = readme.read_text(encoding="utf-8")
+
 setup(
     name="metal-flash-attention",
     version="1.0.0",
     description="Metal-accelerated FlashAttention for PyTorch on Apple Silicon",
-    long_description=open("README.md").read() if os.path.exists("README.md") else "",
+    long_description=long_description,
     long_description_content_type="text/markdown",
     author="Metal FlashAttention Contributors",
     python_requires=">=3.10",
@@ -42,6 +46,6 @@ setup(
     ],
     packages=["metal_flash_attention"],
     ext_modules=ext_modules,
-    cmdclass={"build_ext": BuildExtension},
+    cmdclass={"build_ext": BuildExtension.with_options(use_ninja=False)},
     zip_safe=False,
 )
